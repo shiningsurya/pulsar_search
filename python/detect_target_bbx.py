@@ -14,6 +14,7 @@ This script performs the following:
 
 We would add the functionality to generate scripts for (a,b) but it's too effort.
 """
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd

@@ -17,11 +17,13 @@ WRITECSV   = True
 stationID  = 3
 OBSTIME    = "2020-05-20T00:00:31.000"
 MINMJY     = 1000
+MINBIN     = 8
 NSUB       = 100
 ALPHA      = 1.25
 DM_DELAY   = 4.15E-3 * (0.020**-2 - 0.080**-2)
 TSTEP      = 10 * au.minute
 BEAM_W     = 23.0 * au.degree
+TSAMP      = 83.33E-3
 ############# STEP 0 
 ## Read psrs
 """
@@ -34,12 +36,14 @@ df           = pd.read_csv ("all_psr_dm_p0_s400.csv", sep=";",)
 N,D          = df.shape
 ############# STEP 1 
 ## prepare stats
+df['nbin']   = df['P0'] / TSAMP
 df['tP0']    = NSUB * df['P0'] * au.second
 df['dmd']    = DM_DELAY * df['DM'] * au.second
 df['treq']   = df['tP0'] + df['dmd']
 df['s100']   = df['S400'] * 4**ALPHA
 df['sc']     = asc.SkyCoord (asc.Angle(df['RAJ'], unit=au.hour), asc.Angle(df['DECJ'], unit=au.degree), frame='icrs')
 """
+nbin is number of bins possible
 tP0  is the time length of `nsub` periods
 dmd  is the DM delay 
 treq is the total observing time required for a pulsar assuming we would need `nsub` folding.
@@ -87,9 +91,11 @@ for ii in range (N):
 df['tyn']    =  df['nt'] >= df['treq']
 ############# STEP 4
 ## minimum s100 cut off
+## minimum bins
 df['syn']    = df['s100'] >= MINMJY 
+df['byn']    = df['nbin'] >= MINBIN
 ############# STEP 5
-yn           = df['tyn'] & df['syn']
+yn           = df['tyn'] & df['syn'] & df['byn']
 qdf          = df.loc[yn,['PSRJ', 'RAJ', 'DECJ', 'DM', 'P0', 's100']]
 if WRITECSV:
     qdf.to_csv ("blind_detect_psr.csv", index=False, )
